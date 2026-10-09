@@ -1,13 +1,28 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"   // using SQLite - simple file database
+}
+
+// User table — stores accounts
+model User {
+  id               String   @id @default(uuid())  // unique ID auto-generated
+  email            String   @unique               // no two users same email
+  authPasswordHash String                          // bcrypt hashed password
+  createdAt        DateTime @default(now())        // when account was created
+  entries          Entry[]                         // one user has many entries
+}
+
+// Entry table — stores encrypted password entries
+model Entry {
+  id        String   @id @default(uuid())
+  userId    String                          // which user owns this entry
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // onDelete Cascade = if user deleted, delete all their entries too
+  encrypted String   // AES-GCM encrypted blob — server never sees plaintext!
+  iv        String   // initialization vector used during encryption
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt  // auto updates when entry is changed
 }
